@@ -11,32 +11,32 @@ import (
 	xmpp "github.com/mattn/go-xmpp"
 )
 
-// XMPPFeedEvent are feeds that can be registered for the xmpp server
-type XMPPFeedEvent string
+// XMPPFeedEventName are feeds that can be registered for the xmpp server
+type XMPPFeedEventName string
 
 // Note that not all feeds are available based on your chargepoint API plan
 const (
-	StationProvisioned           XMPPFeedEvent = "station_provisioned"
-	StationUnprovisioned         XMPPFeedEvent = "station_unprovisioned"
-	StationHeadSwap              XMPPFeedEvent = "station_head_swap"
-	StationHiddenVisibleToggle   XMPPFeedEvent = "station_hidden_visible_toggle"
-	StationTokenChange           XMPPFeedEvent = "station_token_change"
-	StationPlanWarrantyChange    XMPPFeedEvent = "station_plan_warranty_change"
-	StationAddressChange         XMPPFeedEvent = "station_address_change"
-	StationNameChange            XMPPFeedEvent = "station_name_change"
-	StationTimezoneChange        XMPPFeedEvent = "station_timezone_change"
-	StationDescriptionChange     XMPPFeedEvent = "station_description_change"
-	StationUsageStatusChange     XMPPFeedEvent = "station_usage_status_change"
-	StationAlarm                 XMPPFeedEvent = "station_alarm"
-	StationACLApplied            XMPPFeedEvent = "station_acl_applied"
-	StationACLRemoved            XMPPFeedEvent = "station_acl_removed"
-	StationPricingApplied        XMPPFeedEvent = "station_pricing_applied"
-	StationPricingremoved        XMPPFeedEvent = "station_pricing_removed"
-	StationReservationEnabled    XMPPFeedEvent = "station_reservation_enabled"
-	StationReservationDisabled   XMPPFeedEvent = "station_reservation_disabled"
-	StationChargingSessionStart  XMPPFeedEvent = "station_charging_session_start"
-	StationChargingSessionStop   XMPPFeedEvent = "station_charging_session_stop"
-	StationChargingSessionUpdate XMPPFeedEvent = "station_charging_session_update"
+	StationProvisioned           XMPPFeedEventName = "station_provisioned"
+	StationUnprovisioned         XMPPFeedEventName = "station_unprovisioned"
+	StationHeadSwap              XMPPFeedEventName = "station_head_swap"
+	StationHiddenVisibleToggle   XMPPFeedEventName = "station_hidden_visible_toggle"
+	StationTokenChange           XMPPFeedEventName = "station_token_change"
+	StationPlanWarrantyChange    XMPPFeedEventName = "station_plan_warranty_change"
+	StationAddressChange         XMPPFeedEventName = "station_address_change"
+	StationNameChange            XMPPFeedEventName = "station_name_change"
+	StationTimezoneChange        XMPPFeedEventName = "station_timezone_change"
+	StationDescriptionChange     XMPPFeedEventName = "station_description_change"
+	StationUsageStatusChange     XMPPFeedEventName = "station_usage_status_change"
+	StationAlarm                 XMPPFeedEventName = "station_alarm"
+	StationACLApplied            XMPPFeedEventName = "station_acl_applied"
+	StationACLRemoved            XMPPFeedEventName = "station_acl_removed"
+	StationPricingApplied        XMPPFeedEventName = "station_pricing_applied"
+	StationPricingremoved        XMPPFeedEventName = "station_pricing_removed"
+	StationReservationEnabled    XMPPFeedEventName = "station_reservation_enabled"
+	StationReservationDisabled   XMPPFeedEventName = "station_reservation_disabled"
+	StationChargingSessionStart  XMPPFeedEventName = "station_charging_session_start"
+	StationChargingSessionStop   XMPPFeedEventName = "station_charging_session_stop"
+	StationChargingSessionUpdate XMPPFeedEventName = "station_charging_session_update"
 )
 
 // XMPPClient is an XMPP listener
@@ -44,26 +44,31 @@ type XMPPClient struct {
 	Server   string
 	User     string
 	Password string
-	Messages chan Event
+	Messages chan XMPPEvent
 	talk     *xmpp.Client
 	ctx      context.Context
 }
 
-// Event represents an event message from the chargepoint API
-type Event struct {
-	XMLName       xml.Name      `xml:"event"`
-	Text          string        `xml:",chardata"`
-	StationID     string        `xml:"stationID"`
-	FeedEventName XMPPFeedEvent `xml:"feedEventName"`
-	SessionID     string        `xml:"sessionID"`
-	StartTime     string        `xml:"startTime"`
-	PortNumber    string        `xml:"portNumber"`
-	RfID          string        `xml:"rfID"`
-	UserID        string        `xml:"userID"`
+// XMPPEvent represents an event message from the chargepoint API
+type XMPPEvent struct {
+	XMLName        xml.Name          `xml:"event"`
+	EndTime        string            `xml:"endTime"`
+	FeedEventName  XMPPFeedEventName `xml:"feedEventName"`
+	FragmentNumber float32           `xml:"fragmentNumber"`
+	NetEnergy      float32           `xml:"netEnergy"`
+	PortNumber     string            `xml:"portNumber"`
+	RfID           string            `xml:"rfID"`
+	SessionID      string            `xml:"sessionID"`
+	StartTime      string            `xml:"startTime"`
+	StationID      string            `xml:"stationID"`
+	StationTime    string            `xml:"stationTime"`
+	Status         string            `xml:"status"`
+	Text           string            `xml:",chardata"`
+	UserID         string            `xml:"userID"`
 }
 
 // NewXMPPClient returns a new xmpp client listener
-func NewXMPPClient(ctx context.Context, server string, user string, password string, debug bool) (XMPPClient, error) {
+func NewXMPPClient(ctx context.Context, server string, user string, password string, ch chan XMPPEvent, debug bool) (XMPPClient, error) {
 	if !strings.HasSuffix("@webservice.chargepointportal.net", user) {
 		user = fmt.Sprintf("%s%s", user, "@webservice.chargepointportal.net")
 	}
@@ -72,7 +77,7 @@ func NewXMPPClient(ctx context.Context, server string, user string, password str
 		Server:   server,
 		User:     user,
 		Password: password,
-		Messages: make(chan Event, 10),
+		Messages: ch,
 		ctx:      ctx,
 	}
 
@@ -115,7 +120,7 @@ func (x *XMPPClient) StartReader() {
 
 			switch v := chat.(type) {
 			case xmpp.Chat:
-				resp := Event{}
+				resp := XMPPEvent{}
 				err := xml.Unmarshal([]byte(v.Text), &resp)
 				if err != nil {
 					log.Fatal(err)

@@ -885,7 +885,7 @@ type Ocpninstances struct {
 	CpnDescription string   `xml:"cpnDescription,omitempty"`
 }
 type DataEventName struct {
-	FeedEventName []XMPPFeedEvent `xml:"feedEventName,omitempty"`
+	FeedEventName []XMPPFeedEventName `xml:"feedEventName,omitempty"`
 }
 type FeedStationSearch struct {
 	StationID     string   `xml:"stationID,omitempty"`
