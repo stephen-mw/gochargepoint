@@ -65,7 +65,7 @@ type XMPPEvent struct {
 	Status         string            `xml:"status"`
 	Text           string            `xml:",chardata"`
 	UserID         string            `xml:"userID"`
-	Raw            string
+	Raw            string            `xml:"-"`
 }
 
 // NewXMPPClient returns a new xmpp client listener
