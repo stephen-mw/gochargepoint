@@ -65,6 +65,7 @@ type XMPPEvent struct {
 	Status         string            `xml:"status"`
 	Text           string            `xml:",chardata"`
 	UserID         string            `xml:"userID"`
+	Raw            string
 }
 
 // NewXMPPClient returns a new xmpp client listener
@@ -121,6 +122,7 @@ func (x *XMPPClient) StartReader() {
 			switch v := chat.(type) {
 			case xmpp.Chat:
 				resp := XMPPEvent{}
+				resp.Raw = v.Text
 				err := xml.Unmarshal([]byte(v.Text), &resp)
 				if err != nil {
 					log.Fatal(err)
