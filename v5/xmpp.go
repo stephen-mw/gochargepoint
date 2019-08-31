@@ -56,6 +56,7 @@ type XMPPEvent struct {
 	FeedEventName  XMPPFeedEventName `xml:"feedEventName"`
 	FragmentNumber float32           `xml:"fragmentNumber"`
 	NetEnergy      float32           `xml:"netEnergy"`
+	Energy         float32           `xml:"energy"`
 	PortNumber     string            `xml:"portNumber"`
 	RfID           string            `xml:"rfID"`
 	SessionID      string            `xml:"sessionID"`
