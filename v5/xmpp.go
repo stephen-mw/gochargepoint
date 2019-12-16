@@ -153,11 +153,11 @@ func (x *XMPPClient) StartReader() {
 			switch v := chat.(type) {
 			case xmpp.Chat:
 				resp := Event{}
-				resp.Raw = v.Text
 				err := xml.Unmarshal([]byte(v.Text), &resp)
 				if err != nil {
 					log.Fatal(err)
 				}
+				resp.Raw = v.Text
 				x.Messages <- resp
 			}
 		}
