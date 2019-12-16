@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	xmpp "github.com/mattn/go-xmpp"
 )
@@ -44,19 +45,18 @@ type XMPPClient struct {
 	Server   string
 	User     string
 	Password string
-	Messages chan XMPPEvent
+	Messages chan Event
 	talk     *xmpp.Client
 	ctx      context.Context
 }
 
-// XMPPEvent represents an event message from the chargepoint API
-type XMPPEvent struct {
+// Event represents an event message from the chargepoint API
+type Event struct {
 	XMLName        xml.Name          `xml:"event"`
 	EndTime        string            `xml:"endTime"`
 	FeedEventName  XMPPFeedEventName `xml:"feedEventName"`
-	FragmentNumber float32           `xml:"fragmentNumber"`
-	NetEnergy      float32           `xml:"netEnergy"`
-	Energy         float32           `xml:"energy"`
+	FragmentNumber int               `xml:"fragmentNumber"`
+	NetEnergy      float64           `xml:"netEnergy"`
 	PortNumber     string            `xml:"portNumber"`
 	RfID           string            `xml:"rfID"`
 	SessionID      string            `xml:"sessionID"`
@@ -69,8 +69,38 @@ type XMPPEvent struct {
 	Raw            string            `xml:"-"`
 }
 
+// GetEventTime returns the time of the event, depending on the event
+func (e *Event) GetEventTime() (time.Time, error) {
+	if e.FeedEventName == "" {
+		return time.Time{}, fmt.Errorf("uninitialized event")
+	}
+
+	var t string
+	var sourceTime string
+
+	// Different timestamp string formats
+	switch e.FeedEventName {
+	case StationChargingSessionUpdate:
+	case StationChargingSessionStop:
+		t = "2006-01-02 15:04:05"
+		if e.FeedEventName == StationChargingSessionUpdate {
+			sourceTime = e.StationTime
+		} else {
+			sourceTime = e.EndTime
+		}
+	case StationChargingSessionStart:
+		t = "2006-01-02T15:04:05Z"
+		sourceTime = e.StartTime
+	default:
+		// A default value of zero
+		return time.Time{}, nil
+	}
+
+	return time.Parse(t, sourceTime)
+}
+
 // NewXMPPClient returns a new xmpp client listener
-func NewXMPPClient(ctx context.Context, server string, user string, password string, ch chan XMPPEvent, debug bool) (XMPPClient, error) {
+func NewXMPPClient(ctx context.Context, server string, user string, password string, ch chan Event, debug bool) (XMPPClient, error) {
 	if !strings.HasSuffix("@webservice.chargepointportal.net", user) {
 		user = fmt.Sprintf("%s%s", user, "@webservice.chargepointportal.net")
 	}
@@ -122,7 +152,7 @@ func (x *XMPPClient) StartReader() {
 
 			switch v := chat.(type) {
 			case xmpp.Chat:
-				resp := XMPPEvent{}
+				resp := Event{}
 				resp.Raw = v.Text
 				err := xml.Unmarshal([]byte(v.Text), &resp)
 				if err != nil {
