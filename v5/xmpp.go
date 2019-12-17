@@ -80,8 +80,7 @@ func (e *Event) GetEventTime() (time.Time, error) {
 
 	// Different timestamp string formats
 	switch e.FeedEventName {
-	case StationChargingSessionUpdate:
-	case StationChargingSessionStop:
+	case StationChargingSessionUpdate, StationChargingSessionStop:
 		t = "2006-01-02 15:04:05"
 		if e.FeedEventName == StationChargingSessionUpdate {
 			sourceTime = e.StationTime

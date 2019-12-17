@@ -3,6 +3,7 @@ package v5
 import (
 	"encoding/xml"
 	"testing"
+	"time"
 )
 
 // TestStationChargingSessionUpdate will test the StationChargingSessionUpdate event
@@ -36,12 +37,16 @@ func TestStationChargingSessionUpdate(t *testing.T) {
 		t.Fatal("Port number incorrect")
 	}
 
+	ts, err := time.Parse("2006-01-02 15:04:05", r.StationTime)
+	if err != nil {
+		t.Fatal(err)
+	}
 	date, err := r.GetEventTime()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if date.IsZero() {
-		t.Fatalf("Bad timestamp: %s", date)
+	if date != ts {
+		t.Fatalf("bad timestamps. Expected %s but got %s", ts, date)
 	}
 }
 
