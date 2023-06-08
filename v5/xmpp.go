@@ -112,7 +112,7 @@ func NewXMPPClient(ctx context.Context, server string, user string, password str
 		ctx:      ctx,
 	}
 
-	xmpp.DefaultConfig = tls.Config{
+	xmpp.DefaultConfig = &tls.Config{
 		ServerName:         strings.Split(c.Server, ":")[0],
 		InsecureSkipVerify: false,
 	}
