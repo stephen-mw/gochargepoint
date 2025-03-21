@@ -649,7 +649,6 @@ type Groupsdata struct {
 }
 
 type SessionSearchdata struct {
-	XMLName       xml.Name  `xml:"urn:dictionary:com.chargepoint.webservices sessionSearchdata"`
 	StationID     string    `xml:"stationID,omitempty"`
 	SessionID     int64     `xml:"sessionID,omitempty"`
 	StationName   string    `xml:"stationName,omitempty"`
@@ -667,7 +666,6 @@ type SessionSearchdata struct {
 }
 
 type SessionSearchResultdata struct {
-	XMLName      xml.Name  `xml:"urn:dictionary:com.chargepoint.webservices sessionSearchResultdata"`
 	StationID    string    `xml:"stationID,omitempty"`
 	StationName  string    `xml:"stationName,omitempty"`
 	PortNumber   string    `xml:"portNumber,omitempty"`
